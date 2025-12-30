@@ -28,7 +28,7 @@
 
 1. 在项目目录运行
    ```bash
-   npm install -g .
+   npm install -g pc-warmup
    ```
 
 2. 安装后可在任何目录使用：
@@ -38,7 +38,7 @@
 
 3. 卸载：
    ```bash
-   npm uninstall -g warmup
+   npm uninstall -g pc-warmup
    ```
 
 ## 命令行参数
