@@ -54,18 +54,17 @@ function showHelp() {
 
 选项:
   --gpu, -g        启用GPU预热（网页渲染）
-  --cpu             仅使用CPU预热
+  --cpu             默认使用CPU预热
   --no-browser      不自动打开浏览器
-  --cpu=<值>        设置CPU使用率 (1-100)，默认70
   --time=<秒>       设置预热时长（秒），默认300（5分钟）
   --port=<端口>     设置服务器端口，默认8080
   --help, -h        显示帮助信息
 
 示例:
-  warmup --gpu              CPU+GPU预热
-  warmup --cpu              仅CPU预热
-  warmup --gpu --cpu=60     CPU使用率60%
-  warmup --gpu --time=300   预热5分钟
+  warmup                    # CPU预热 仅cpu预热
+  warmup --gpu              # CPU+GPU预热（自动打开网页）
+  warmup --time=300   # 预热5分钟
+  warmup --gpu --no-browser # 启动网页服务但，不自动打开浏览器
 
 全局安装:
   npm install -g .

@@ -1,8 +1,11 @@
 {
   "name": "pc-warmup",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "让CPU和GPU运转起来预热电脑，避免冬天启动时的异常声音",
   "main": "index.js",
+  "repository": {
+    "url": "https://github.com/gaoyia/pc-warmup.git"
+  },
   "bin": {
     "warmup": "./bin/pc-warmup.js"
   },
