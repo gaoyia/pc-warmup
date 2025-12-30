@@ -1,0 +1,16 @@
+{
+  "cpuUsage": 70,
+  "warmupDuration": 300,
+  "checkInterval": 1000,
+  "useGPU": true,
+  "serverPort": 8080,
+  "autoOpenBrowser": true,
+  "description": {
+    "cpuUsage": "目标CPU使用率，范围1-100，建议60-80",
+    "warmupDuration": "预热时长（秒），建议300-900秒（5-15分钟）",
+    "checkInterval": "检查间隔（毫秒），建议500-2000",
+    "useGPU": "是否使用GPU预热（网页渲染）",
+    "serverPort": "本地服务器端口，默认8080",
+    "autoOpenBrowser": "是否自动打开浏览器"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "pc-warmup",
+  "version": "1.0.0",
+  "description": "让CPU和GPU运转起来预热电脑，避免冬天启动时的异常声音",
+  "main": "index.js",
+  "bin": {
+    "warmup": "./bin/pc-warmup.js"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [
+    "warmup",
+    "cpu",
+    "gpu",
+    "stress"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=12.0.0"
+  }
+}

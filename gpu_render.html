@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GPU预热 - 显卡加速</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Microsoft YaHei', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      overflow: hidden;
+    }
+    
+    .container {
+      text-align: center;
+      padding: 20px;
+      position: relative;
+      z-index: 10;
+    }
+    
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 20px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+    
+    .stats {
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 20px 40px;
+      margin: 20px 0;
+      display: inline-block;
+    }
+    
+    .stat-item {
+      margin: 10px 0;
+      font-size: 1.2em;
+    }
+    
+    .stat-value {
+      font-weight: bold;
+      font-size: 1.5em;
+      color: #ffd700;
+    }
+    
+    #canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      opacity: 0.6;
+    }
+    
+    .controls {
+      margin-top: 30px;
+      z-index: 10;
+      position: relative;
+    }
+    
+    .btn {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      border: none;
+      color: white;
+      padding: 15px 30px;
+      font-size: 1.1em;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: transform 0.3s, box-shadow 0.3s;
+      margin: 0 10px;
+    }
+    
+    .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    }
+    
+    .btn:active {
+      transform: translateY(-1px);
+    }
+    
+    .info {
+      margin-top: 20px;
+      font-size: 0.9em;
+      opacity: 0.8;
+      max-width: 600px;
+    }
+    
+    .status {
+      display: inline-block;
+      padding: 8px 16px;
+      border-radius: 20px;
+      background: #4CAF50;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    
+    .status.paused {
+      background: #FF9800;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div class="container">
+    <h1>🔥 GPU预热中</h1>
+    
+    <div class="stats">
+      <div class="stat-item">
+        运行时间: <span class="stat-value" id="runtime">00:00</span>
+      </div>
+      <div class="stat-item">
+        帧率: <span class="stat-value" id="fps">0</span> FPS
+      </div>
+      <div class="stat-item">
+        粒子数: <span class="stat-value" id="particles">5000</span>
+      </div>
+    </div>
+    
+    <div class="status" id="status">运行中</div>
+    
+    <div class="controls">
+      <button class="btn" onclick="togglePause()">暂停/继续</button>
+      <button class="btn" onclick="increaseParticles()">增加粒子</button>
+      <button class="btn" onclick="decreaseParticles()">减少粒子</button>
+    </div>
+    
+    <p class="info">
+      使用Canvas和WebGL进行GPU加速渲染<br>
+      粒子越多，GPU负载越高<br>
+      不会导致系统卡顿，安全可靠
+    </p>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let particles = [];
+    let particleCount = 5000;
+    let isRunning = true;
+    let startTime = Date.now();
+    let lastTime = Date.now();
+    let frameCount = 0;
+    let fps = 0;
+    
+    // 调整画布大小
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    
+    // 粒子类
+    class Particle {
+      constructor() {
+        this.reset();
+      }
+      
+      reset() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.vx = (Math.random() - 0.5) * 4;
+        this.vy = (Math.random() - 0.5) * 4;
+        this.size = Math.random() * 3 + 1;
+        this.hue = Math.random() * 360;
+        this.life = Math.random() * 100 + 50;
+      }
+      
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.hue += 0.5;
+        this.life--;
+        
+        // 边界反弹
+        if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+        if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+        
+        // 重置生命
+        if (this.life <= 0) {
+          this.reset();
+        }
+      }
+      
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = `hsla(${this.hue}, 100%, 60%, 0.8)`;
+        ctx.fill();
+      }
+    }
+    
+    // 初始化粒子
+    function initParticles() {
+      particles = [];
+      for (let i = 0; i < particleCount; i++) {
+        particles.push(new Particle());
+      }
+      document.getElementById('particles').textContent = particleCount.toLocaleString();
+    }
+    
+    // 绘制连接线
+    function drawLines() {
+      const maxDistance = 100;
+      
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          if (distance < maxDistance) {
+            const opacity = (1 - distance / maxDistance) * 0.3;
+            ctx.beginPath();
+            ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`;
+            ctx.lineWidth = 0.5;
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.stroke();
+          }
+        }
+      }
+    }
+    
+    // 更新FPS
+    function updateFPS() {
+      frameCount++;
+      const currentTime = Date.now();
+      const elapsed = currentTime - lastTime;
+      
+      if (elapsed >= 1000) {
+        fps = frameCount;
+        frameCount = 0;
+        lastTime = currentTime;
+        document.getElementById('fps').textContent = fps;
+      }
+    }
+    
+    // 更新运行时间
+    function updateRuntime() {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+      const seconds = (elapsed % 60).toString().padStart(2, '0');
+      document.getElementById('runtime').textContent = `${minutes}:${seconds}`;
+    }
+    
+    // 主渲染循环
+    function render() {
+      if (!isRunning) {
+        requestAnimationFrame(render);
+        return;
+      }
+      
+      // 清空画布
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // 更新和绘制粒子
+      particles.forEach(particle => {
+        particle.update();
+        particle.draw();
+      });
+      
+      // 绘制连接线（增加GPU负载）
+      if (particleCount <= 3000) {
+        drawLines();
+      }
+      
+      // 更新统计
+      updateFPS();
+      updateRuntime();
+      
+      requestAnimationFrame(render);
+    }
+    
+    // 控制函数
+    function togglePause() {
+      isRunning = !isRunning;
+      const status = document.getElementById('status');
+      if (isRunning) {
+        status.textContent = '运行中';
+        status.classList.remove('paused');
+      } else {
+        status.textContent = '已暂停';
+        status.classList.add('paused');
+      }
+    }
+    
+    function increaseParticles() {
+      if (particleCount < 10000) {
+        particleCount += 1000;
+        initParticles();
+      }
+    }
+    
+    function decreaseParticles() {
+      if (particleCount > 1000) {
+        particleCount = Math.max(1000, particleCount - 1000);
+        initParticles();
+      }
+    }
+    
+    // 初始化
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+    initParticles();
+    render();
+    
+    console.log('GPU预热页面已加载，使用Canvas进行GPU加速渲染');
+    console.log('粒子数量:', particleCount);
+  </script>
+</body>
+</html>
